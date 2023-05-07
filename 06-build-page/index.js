@@ -4,12 +4,19 @@ const readline = require("readline");
 
 const componentsDir = path.join(__dirname, "components");
 const destinationDir = path.join(__dirname, "project-dist");
-const indexHtml = fs.createWriteStream(path.join(destinationDir, "index.html"), { flags: fs.O_APPEND });
+
 
 
 const tempTag = /{{\w+}}/g;
 let tagArray = [];
 let template = "";
+
+async function deleteDir(dir) {
+  try {
+    await fs.promises.access(dir);
+    await fs.promises.rm(path.join(dir), { recursive: true, force: true });
+  } catch {};
+}
 
 async function makeDir() {
   fs.mkdir(destinationDir, { recursive: true }, (err) => {
@@ -19,6 +26,7 @@ async function makeDir() {
 
 
 async function buildHtml() {
+const indexHtml = fs.createWriteStream(path.join(destinationDir, "index.html"), { flags: fs.O_APPEND });
 let template = await fs.promises.readFile(path.join(__dirname, "template.html"), "utf-8");
 	tagArray = template.match(tempTag);
 	for(const tag of tagArray) {
@@ -75,7 +83,12 @@ function copyDirectory(source, destination) {
   });
 }
 
-makeDir();
-buildHtml();
-buildStyles();
-copyDirectory(path.join(__dirname, "assets"), path.join(destinationDir, "assets"));
+async function buildPage() {
+  await deleteDir(destinationDir);
+  await makeDir();
+  buildHtml();
+  buildStyles();
+  copyDirectory(path.join(__dirname, "assets"), path.join(destinationDir, "assets"));
+}
+
+buildPage();
